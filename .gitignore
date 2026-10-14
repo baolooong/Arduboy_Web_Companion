@@ -1,0 +1,10 @@
+node_modules/
+dist/
+model/*.glb
+*.local
+
+# 用户的 STEP 模型源文件(不上传 GitHub)
+*.STEP
+*.step
+*.STP
+*.stp

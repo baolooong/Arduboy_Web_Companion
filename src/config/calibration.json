@@ -1,0 +1,19 @@
+{
+  "_comment": "DEFAULT — run tools/calibrate.html on the real model and save its export here. All positions are in model units (mm). screen: center x/y/z, outward surface normal, plane width/height. buttons: press position, press axis (normal + depth), and an optional meshName for direct mesh animation (STEP parts are unnamed, so meshName is normally null and the viewer uses indicator dots).",
+  "screen": {
+    "x": 0,
+    "y": 0,
+    "z": 0,
+    "normal": { "x": 0, "y": 0, "z": 1 },
+    "w": 26,
+    "h": 13
+  },
+  "buttons": {
+    "up":    { "x": 0, "y": -20, "z": 0, "normal": { "x": 0, "y": 0, "z": 1 }, "depth": 1.0, "meshName": null },
+    "down":  { "x": 0, "y": -20, "z": 0, "normal": { "x": 0, "y": 0, "z": 1 }, "depth": 1.0, "meshName": null },
+    "left":  { "x": 0, "y": -20, "z": 0, "normal": { "x": 0, "y": 0, "z": 1 }, "depth": 1.0, "meshName": null },
+    "right": { "x": 0, "y": -20, "z": 0, "normal": { "x": 0, "y": 0, "z": 1 }, "depth": 1.0, "meshName": null },
+    "a":     { "x": 14, "y": -16, "z": 0, "normal": { "x": 0, "y": 0, "z": 1 }, "depth": 1.0, "meshName": null },
+    "b":     { "x": 26, "y": -16, "z": 0, "normal": { "x": 0, "y": 0, "z": 1 }, "depth": 1.0, "meshName": null }
+  }
+}

@@ -1,0 +1,153 @@
+/* Arduboy Remote — dark retro theme. Accent: warm amber (Arduboy classic). */
+:root {
+  --bg: #14161a;
+  --panel: #1c1f26;
+  --panel-2: #23262f;
+  --line: #2e323d;
+  --text: #e8e6df;
+  --muted: #9a97a0;
+  --amber: #f6b73c;
+  --amber-dim: #b8862c;
+  --green: #4fc26e;
+  --red: #e05555;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  font-family: "Segoe UI", "Microsoft YaHei", system-ui, sans-serif;
+  font-size: 14px;
+}
+
+/* ---------- header ---------- */
+#hdr {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 10px 18px;
+  background: var(--panel);
+  border-bottom: 1px solid var(--line);
+}
+.brand { font-weight: 700; font-size: 16px; color: var(--amber); }
+.status { display: flex; align-items: center; gap: 8px; color: var(--muted); }
+.dot { width: 10px; height: 10px; border-radius: 50%; background: #555; }
+.dot.on   { background: var(--green); box-shadow: 0 0 6px var(--green); }
+.dot.sim  { background: var(--amber); box-shadow: 0 0 6px var(--amber); }
+.dot.off  { background: #555; }
+.actions { margin-left: auto; display: flex; gap: 8px; }
+button {
+  padding: 6px 14px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--panel-2);
+  color: var(--text);
+  cursor: pointer;
+}
+button:hover:not(:disabled) { border-color: var(--amber); color: var(--amber); }
+button:disabled { opacity: 0.4; cursor: default; }
+
+/* ---------- layout ---------- */
+#layout {
+  display: flex;
+  gap: 16px;
+  padding: 16px 18px;
+  height: calc(100% - 49px);
+}
+#panel2d {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+#panel3d {
+  flex: 1 1 auto;
+  position: relative;
+  min-width: 0;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  overflow: hidden;
+}
+#viewer { width: 100%; height: 100%; display: block; }
+
+#viewerFallback {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: var(--muted);
+}
+.hidden { display: none !important; }
+
+/* ---------- screen ---------- */
+#screenWrap {
+  position: relative;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 10px;
+}
+#screen {
+  width: 512px;   /* 128x64 -> 4x,整数倍保证像素锐利 */
+  height: 256px;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  background: #000;
+  border-radius: 4px;
+}
+#screenHUD {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  display: flex;
+  gap: 10px;
+  font-size: 12px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- button pad ---------- */
+#pad {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 16px 24px;
+}
+#dpad {
+  display: grid;
+  grid-template-areas:
+    ".    up    ."
+    "left .     right"
+    ".    down  .";
+  gap: 4px;
+}
+#dpad .padBtn[data-button="up"]    { grid-area: up; }
+#dpad .padBtn[data-button="left"]  { grid-area: left; }
+#dpad .padBtn[data-button="right"] { grid-area: right; }
+#dpad .padBtn[data-button="down"]  { grid-area: down; }
+.padBtn {
+  width: 56px;
+  height: 56px;
+  font-size: 20px;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
+}
+.padBtn.ab { border-radius: 50%; font-weight: 700; }
+#ab { display: flex; gap: 12px; }
+.padBtn:active, .padBtn.held {
+  background: var(--amber);
+  border-color: var(--amber);
+  color: #14161a;
+  transform: translateY(1px);
+}
+#hint { color: var(--muted); font-size: 12px; text-align: center; }

@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Arduboy Remote</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎮</text></svg>" />
+  <link rel="stylesheet" href="/src/style.css" />
+</head>
+<body>
+  <header id="hdr">
+    <div class="brand">🎮 Arduboy Remote</div>
+    <div class="status">
+      <span id="statusDot" class="dot off"></span>
+      <span id="statusText">未连接</span>
+    </div>
+    <div class="actions">
+      <button id="btnConnect" type="button">连接设备</button>
+      <button id="btnDisconnect" type="button" disabled>断开</button>
+      <button id="btnSimulate" type="button">模拟模式</button>
+    </div>
+  </header>
+
+  <main id="layout">
+    <!-- 左侧:屏幕 + 按键面板 -->
+    <section id="panel2d">
+      <div id="screenWrap">
+        <canvas id="screen" width="128" height="64"></canvas>
+        <div id="screenHUD">
+          <span id="fps">-- fps</span>
+          <span id="drops" class="hidden">丢帧 --</span>
+        </div>
+      </div>
+
+      <div id="pad">
+        <div id="dpad">
+          <button class="padBtn" data-button="up"    title="上 (W)">▲</button>
+          <button class="padBtn" data-button="left"  title="左 (A)">◀</button>
+          <button class="padBtn" data-button="right" title="右 (D)">▶</button>
+          <button class="padBtn" data-button="down"  title="下 (S)">▼</button>
+        </div>
+        <div id="ab">
+          <button class="padBtn ab" data-button="b" title="B (K)">B</button>
+          <button class="padBtn ab" data-button="a" title="A (J)">A</button>
+        </div>
+      </div>
+      <p id="hint">键盘:WASD 方向 · J=A K=B · 鼠标滚轮缩放 3D</p>
+    </section>
+
+    <!-- 右侧:3D 模型视图 -->
+    <section id="panel3d">
+      <canvas id="viewer"></canvas>
+      <div id="viewerFallback" class="hidden">
+        <p>未找到 3D 模型(model/model.glb)</p>
+        <p>参照 tools/convert_model.md 转换 STEP 模型</p>
+      </div>
+    </section>
+  </main>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>

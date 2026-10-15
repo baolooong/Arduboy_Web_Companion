@@ -8,9 +8,9 @@
 //
 // Device -> Host (stream, ~30fps):
 //   0xAA 0x01 <seq> <chunkIndex> <chunkCount> <64B payload> <crc>
-//       The 1024-byte framebuffer is sent as 16 chunks of 64 bytes.
-//       chunkCount is constant (=16); the parser accepts any count so the
-//       firmware can later switch to 32x32B chunks without a web update.
+//       The 1024-byte framebuffer is sent as 16 chunks of 64 bytes. A 64-byte
+//       payload exactly fills the 32U4's USB endpoint FIFO, so the firmware
+//       streams at one packet per SOF (1ms) — 16ms per frame.
 //   0xAA 0x02 <buttons> <crc>                       button state (sent once per frame)
 //   0xAA 0x20 <protoMajor> <chunkCount> <chunkSize> <maxRate> <crc>
 //       device info reply (answer to 0x12)
@@ -20,8 +20,8 @@
 //   0xAA 0x11 <rate>     <crc>    set target frame rate (0 = adaptive, 1..60)
 //   0xAA 0x12                     request device info (2 bytes, no crc — tiny)
 //
-// Button bits (Arduboy2 order — match your board's wiring if different):
-//   bit0 = UP, bit1 = RIGHT, bit2 = LEFT, bit3 = DOWN, bit4 = A, bit5 = B
+// Button bits (Arduboy2 native values, bits 7..2 — match your board's wiring
+// if different): UP=0x80 RIGHT=0x40 LEFT=0x20 DOWN=0x10 A=0x08 B=0x04
 // ============================================================================
 
 export const SYNC = 0xaa;
@@ -33,19 +33,20 @@ export const T_SET_RATE = 0x11; // host -> dev: target frame rate
 export const T_REQ_INFO = 0x12; // host -> dev: request device info
 export const T_DEV_INFO = 0x20; // dev -> host: device info reply
 
-export const CHUNK_SIZE = 64; // payload bytes per chunk
+export const CHUNK_SIZE = 64; // payload bytes per chunk (one 64-byte USB packet)
 export const CHUNK_COUNT = 16; // 1024-byte framebuffer / 64
 export const FRAME_SIZE = 1024; // Arduboy 128x64 1bpp framebuffer
 
 export const BUTTONS = {
-  UP: 0x01,
-  RIGHT: 0x02,
-  LEFT: 0x04,
-  DOWN: 0x08,
-  A: 0x10,
-  B: 0x20,
+  UP: 0x80,    // Arduboy2 UP_BUTTON    = _BV(7)
+  RIGHT: 0x40, // Arduboy2 RIGHT_BUTTON = _BV(6)
+  LEFT: 0x20,  // Arduboy2 LEFT_BUTTON  = _BV(5)
+  DOWN: 0x10,  // Arduboy2 DOWN_BUTTON  = _BV(4)
+  A: 0x08,     // Arduboy2 A_BUTTON     = _BV(3)
+  B: 0x04,     // Arduboy2 B_BUTTON     = _BV(2)
 };
-export const ALL_BUTTONS = 0x3f;
+export const ALL_BUTTONS =
+  BUTTONS.UP | BUTTONS.RIGHT | BUTTONS.LEFT | BUTTONS.DOWN | BUTTONS.A | BUTTONS.B; // 0xFC
 
 // ---------------------------------------------------------------------------
 // CRC-8: poly 0x31, init 0x00, MSB-first, no reflection. Matches the AVR

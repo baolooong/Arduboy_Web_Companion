@@ -14,7 +14,7 @@
 
 import {
   SYNC, T_BTN_EVENT, T_SET_RATE, T_REQ_INFO,
-  CHUNK_COUNT, CHUNK_SIZE, FRAME_SIZE, ALL_BUTTONS, crc8,
+  CHUNK_COUNT, CHUNK_SIZE, FRAME_SIZE, ALL_BUTTONS, BUTTONS, crc8,
 } from './protocol.js';
 
 let cb = null;     // event callback given to simulatorStart
@@ -156,10 +156,11 @@ function renderFrame(t) {
         if (g[row][col] === '1') setPixel(buf, x0 + i * 4 + col, 2 + row, 1);
   }
 
-  // Live button-state indicator: 6 squares (bit order UP RIGHT LEFT DOWN A B),
-  // filled when the bit is set, outlined otherwise.
-  for (let i = 0; i < 6; i++) {
-    const on = (buttons >> i) & 1;
+  // Live button-state indicator: 6 squares (UP RIGHT LEFT DOWN A B), filled
+  // when the bit is set, outlined otherwise. Uses the real Arduboy2 bit values.
+  const ORDER = [BUTTONS.UP, BUTTONS.RIGHT, BUTTONS.LEFT, BUTTONS.DOWN, BUTTONS.A, BUTTONS.B];
+  for (let i = 0; i < ORDER.length; i++) {
+    const on = (buttons & ORDER[i]) !== 0;
     const x = 2 + i * 7, y = 58;
     for (let dy = 0; dy < 4; dy++)
       for (let dx = 0; dx < 4; dx++)

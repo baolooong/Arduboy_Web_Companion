@@ -18,6 +18,7 @@
       <button id="btnConnect" type="button">连接设备</button>
       <button id="btnDisconnect" type="button" disabled>断开</button>
       <button id="btnSimulate" type="button">模拟模式</button>
+      <button id="btnToggle3d" type="button" title="显示/隐藏 3D 模型视图">3D 模型</button>
     </div>
   </header>
 
@@ -47,8 +48,8 @@
       <p id="hint">键盘:WASD 方向 · J=A K=B · 鼠标滚轮缩放 3D</p>
     </section>
 
-    <!-- 右侧:3D 模型视图 -->
-    <section id="panel3d">
+    <!-- 右侧:3D 模型视图(默认隐藏,顶部"3D 模型"按钮切换) -->
+    <section id="panel3d" class="hidden">
       <canvas id="viewer"></canvas>
       <div id="viewerFallback" class="hidden">
         <p>未找到 3D 模型(model/model.glb)</p>

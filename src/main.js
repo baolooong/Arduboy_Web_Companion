@@ -32,6 +32,8 @@ const statusText = $('statusText');
 const btnConnect = $('btnConnect');
 const btnDisconnect = $('btnDisconnect');
 const btnSimulate = $('btnSimulate');
+const btnToggle3d = $('btnToggle3d');
+const panel3d = $('panel3d');
 const fpsEl = $('fps');
 const dropsEl = $('drops');
 const viewerFallback = $('viewerFallback');
@@ -178,13 +180,25 @@ initButtons({
   },
 });
 
-// 3D viewer: screen canvas doubles as the live texture on the model
-initViewer($('panel3d'), (status) => {
-  if (status === 'model-missing') viewerFallback.classList.remove('hidden');
-  else viewerFallback.classList.add('hidden');
-});
-viewerSetScreenSource(screenCanvas());
-viewerSetSize();
+// 3D viewer: lazy-init behind the toggle, default OFF (no model.glb yet).
+let viewerInited = false;
+
+function toggle3d() {
+  const on = panel3d.classList.toggle('hidden') === false;
+  btnToggle3d.classList.toggle('active', on);
+  if (!on) return;
+  if (!viewerInited) {
+    viewerInited = true;
+    initViewer(panel3d, (status) => {
+      if (status === 'model-missing') viewerFallback.classList.remove('hidden');
+      else viewerFallback.classList.add('hidden');
+    });
+    viewerSetScreenSource(screenCanvas());
+  }
+  viewerSetSize();
+}
+
+btnToggle3d.addEventListener('click', toggle3d);
 window.addEventListener('resize', viewerSetSize);
 
 // If the browser already granted a port earlier, surface it — user still

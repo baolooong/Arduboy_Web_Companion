@@ -29,18 +29,30 @@ const BIT_BY_KEY = {
 let onPress = () => {};
 let onRelease = () => {};
 
-function setHeld(bit, held) {
+// The pad highlights the OR of two sources: buttons the user is holding on
+// this page (localHeld) and buttons physically held on the device (remoteHeld,
+// echoed back every frame). Merging them here avoids a flicker on remote
+// press: a locally-pressed key stays lit while its echo makes the ~1-frame
+// round trip, instead of being cleared by the next device state packet.
+let localHeld = 0;
+let remoteHeld = 0;
+
+function refreshHeld() {
+  const state = localHeld | remoteHeld;
   BTNS.forEach((el) => {
-    if (BIT_BY_NAME[el.dataset.button] === bit) el.classList.toggle('held', held);
+    const bit = BIT_BY_NAME[el.dataset.button];
+    el.classList.toggle('held', !!(bit && state & bit));
   });
 }
 
 function press(bit) {
-  setHeld(bit, true);
+  localHeld |= bit;
+  refreshHeld();
   onPress(bit);
 }
 function release(bit) {
-  setHeld(bit, false);
+  localHeld &= ~bit;
+  refreshHeld();
   onRelease(bit);
 }
 
@@ -78,12 +90,12 @@ export function initButtons({ onPress: p, onRelease: r } = {}) {
 
 // Reflect the state reported BY the device (what its buttons physically are).
 export function setRemoteButtons(buttons) {
-  BTNS.forEach((el) => {
-    const bit = BIT_BY_NAME[el.dataset.button];
-    el.classList.toggle('held', !!(bit && buttons & bit));
-  });
+  remoteHeld = buttons;
+  refreshHeld();
 }
 
 export function buttonsClearHeld() {
+  localHeld = 0;
+  remoteHeld = 0;
   BTNS.forEach((el) => el.classList.remove('held'));
 }

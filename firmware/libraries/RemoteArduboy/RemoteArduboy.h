@@ -7,10 +7,14 @@
 // ============================================================================
 // RemoteArduboy — stream the screen to a browser over USB CDC and inject
 // button presses received from it. Designed to touch game code as little as
-// possible: 3 lines per game (begin / poll / sendFrame).
+// possible: 4 calls per game (begin / update / pollButtons / sendFrame) plus
+// one #include. Games that only read pressed()/anyPressed() can skip
+// pollButtons entirely — the Arduboy2Core patch makes remote buttons flow
+// through buttonsState() automatically.
 //
-// Requires a tiny patch to Arduboy2.h (one line) so the internal button
-// state can be merged — see README.md in this library for the exact edit.
+// Requires a tiny patch to Arduboy2Core (one static member + one line in
+// buttonsState()) so remote buttons are OR'd into the pin state that
+// pressed()/justPressed() read — see README.md for the exact edit.
 // ============================================================================
 
 class RemoteArduboy {
@@ -26,8 +30,8 @@ class RemoteArduboy {
 
     // Button polling with remote merge. Use INSTEAD of arduboy.pollButtons():
     //    RemoteArduboy::pollButtons(arduboy);
-    // Then arduboy.pressed(), arduboy.justPressed(), arduboy.buttonsState()
-    // behave as if the remote buttons were physically pressed.
+    // Then arduboy.pressed(), arduboy.justPressed() behave as if the remote
+    // buttons were physically pressed (raw state: public currentButtonState).
     static void pollButtons(Arduboy2 &arduboy);
 
     // Call right AFTER arduboy.display() once per frame.

@@ -16,10 +16,12 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { BUTTONS } from './protocol.js';
 import calibration from './config/calibration.json';
 
-// Button keys in bit order (bit0..bit5 — matches BUTTONS in protocol.js).
+// Button keys and their real Arduboy2 bit values (see protocol.js BUTTONS).
 const BTN_KEYS = ['up', 'right', 'left', 'down', 'a', 'b'];
+const BTN_BITS = [BUTTONS.UP, BUTTONS.RIGHT, BUTTONS.LEFT, BUTTONS.DOWN, BUTTONS.A, BUTTONS.B];
 const SCREEN_LIFT = 0.15; // mm above the shell surface, avoids z-fighting
 const DOT_RADIUS = 1.2; // fallback indicator dot radius (mm)
 const EDGE_THRESHOLD = 30; // degrees — sharp CAD corners only, no tessellation noise
@@ -234,7 +236,7 @@ function createViewer(container, onStatus) {
 
   function setButtonState(bitmask) {
     for (let i = 0; i < BTN_KEYS.length; i++) {
-      buttons[BTN_KEYS[i]].pressed = !!(bitmask & (1 << i));
+      buttons[BTN_KEYS[i]].pressed = !!(bitmask & BTN_BITS[i]);
     }
   }
 

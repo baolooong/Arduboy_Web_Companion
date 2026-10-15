@@ -48,6 +48,11 @@ button {
 }
 button:hover:not(:disabled) { border-color: var(--amber); color: var(--amber); }
 button:disabled { opacity: 0.4; cursor: default; }
+button.active {
+  background: var(--amber);
+  border-color: var(--amber);
+  color: #14161a;
+}
 
 /* ---------- layout ---------- */
 #layout {

@@ -7,14 +7,8 @@
 
 Arduboy2 arduboy;
 
-// 按键位定义(Arduboy2 顺序,与 RemoteArduboy 协议一致)
-#define B_UP    0x01
-#define B_RIGHT 0x02
-#define B_LEFT  0x04
-#define B_DOWN  0x08
-#define B_A     0x10
-#define B_B     0x20
-
+// 按键检测直接用 Arduboy2 自带的常量(UP_BUTTON/DOWN_BUTTON/...),
+// 不要自己重定义位值——它们的位与硬件接线一致,协议也是照这个传的。
 uint8_t bounceX = 0, bounceY = 0;
 int8_t  velX = 2, velY = 1;
 uint8_t lastButtons = 0;
@@ -43,13 +37,13 @@ void loop() {
   arduboy.clear();
   arduboy.fillRect(bounceX, bounceY, 4, 4, WHITE);
 
-  // 按键指示器:按下时对应的圆点亮起
-  if (arduboy.pressed(B_UP))    arduboy.fillCircle(8, 4, 2, WHITE);
-  if (arduboy.pressed(B_DOWN))  arduboy.fillCircle(8, 14, 2, WHITE);
-  if (arduboy.pressed(B_LEFT))  arduboy.fillCircle(3, 9, 2, WHITE);
-  if (arduboy.pressed(B_RIGHT)) arduboy.fillCircle(13, 9, 2, WHITE);
-  if (arduboy.pressed(B_A))     arduboy.fillCircle(120, 30, 3, WHITE);
-  if (arduboy.pressed(B_B))     arduboy.fillCircle(112, 30, 3, WHITE);
+  // 按键指示器:按下时对应的圆点亮起(物理按键 | 网页远端按键都会亮)
+  if (arduboy.pressed(UP_BUTTON))    arduboy.fillCircle(8, 4, 2, WHITE);
+  if (arduboy.pressed(DOWN_BUTTON))  arduboy.fillCircle(8, 14, 2, WHITE);
+  if (arduboy.pressed(LEFT_BUTTON))  arduboy.fillCircle(3, 9, 2, WHITE);
+  if (arduboy.pressed(RIGHT_BUTTON)) arduboy.fillCircle(13, 9, 2, WHITE);
+  if (arduboy.pressed(A_BUTTON))     arduboy.fillCircle(120, 30, 3, WHITE);
+  if (arduboy.pressed(B_BUTTON))     arduboy.fillCircle(112, 30, 3, WHITE);
 
   arduboy.setCursor(20, 56);
   arduboy.print(F("REMOTE OK"));

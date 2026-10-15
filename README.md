@@ -17,7 +17,7 @@
 
 - **实时屏幕**:128×64 单色 OLED ~30fps 串流(USB CDC,每块 64B,非阻塞)
 - **按键状态**:上/下/左/右/A/B 实时高亮(设备侧状态每帧回传)
-- **反向操作**:网页/键盘按键注入固件,游戏只改 3 行代码,`pressed()/justPressed()` 照常工作
+- **反向操作**:网页/键盘按键注入固件,游戏只改 4 处调用,`pressed()/justPressed()` 照常工作
 - **3D 展示**:STEP 离线转 GLB,实时画面贴到模型屏幕,按键按下有下沉动画
 - **模拟模式**:无硬件也能开发调试 UI;断线自动回退,拔线不卡游戏
 
@@ -53,6 +53,7 @@ npm run dev        # 打开 http://localhost:5173(Chrome/Edge)
 | 连接设备 | 弹出设备选择框,选 Arduboy 的 COM 口(一次授权,浏览器按站点记忆) |
 | 断开 | 关闭端口,回到未连接状态 |
 | 模拟模式 | 不接硬件,跑内置假设备(与真机走同一套协议) |
+| 3D 模型 | 开关:默认关闭(未转换模型时隐藏);打开后懒加载 three.js 视图,再点关闭 |
 | 按键面板 | 鼠标点击 / 触摸按住;上/下/左/右 + A/B |
 | 键盘 | `WASD` 方向 · `J`=A · `K`=B |
 | 3D 视图 | 拖拽旋转、滚轮缩放、右键平移(OrbitControls) |
@@ -62,14 +63,20 @@ npm run dev        # 打开 http://localhost:5173(Chrome/Edge)
 
 详见 [firmware/libraries/RemoteArduboy/README.md](firmware/libraries/RemoteArduboy/README.md),要点:
 
-**① Arduboy2 补丁(一次性,一行生效)** — Arduboy2 的按键状态是私有变量,加一个公共 setter 才能合入远端按键。在 `Arduboy2.h` 的公共函数区加:
+**① Arduboy2 补丁(一次性,两处小改)** — Arduboy2 的 `pressed()` 直接读引脚
+`buttonsState()`,所以远端按键必须叠加进 `buttonsState()` 才生效。在
+`Arduboy2Core.h` 加一个静态成员、`Arduboy2Core.cpp` 的 `buttonsState()`
+末尾 OR 上它(详见 [固件 README](firmware/libraries/RemoteArduboy/README.md)):
 
 ```cpp
-#define ARDUBOY2_BUTTON_STATE_ACCESSIBLE 1
-void setButtonState(uint8_t state) { currentButtonState = state; }
+// Arduboy2Core.h(公共区)
+static uint8_t remoteButtonsState;
+
+// Arduboy2Core.cpp(buttonsState() 末尾)
+return buttons | remoteButtonsState;
 ```
 
-**② 游戏代码(每个游戏只改 3 处)**
+**② 游戏代码(每个游戏只改 4 处调用 + 1 行 include)**
 
 ```cpp
 #include <RemoteArduboy.h>
@@ -82,29 +89,64 @@ void setup() {
 void loop() {
   RemoteArduboy::update();                // ② 收主机命令(O(1),放 loop 最前)
   // ...
-  RemoteArduboy::pollButtons(arduboy);    // ③ = 物理按键 | 远端按键
-  // 之后 pressed()/justPressed()/buttonsState() 与原来完全一样
+  RemoteArduboy::pollButtons(arduboy);    // ③ = 物理按键 | 远端按键(见下:只用 pressed() 的可跳过)
+  // 之后 pressed()/justPressed() 与原来完全一样(原始状态在 currentButtonState)
   // ...
   arduboy.display();
   RemoteArduboy::sendFrame();             // ④ 发送本帧(缓冲满丢帧,绝不卡游戏)
 }
 ```
 
+> ③ 是否必要取决于游戏怎么读按键:只用 `pressed()` / `anyPressed()` 的游戏
+> (直接读引脚)可以**不改按键代码**——远端按键经 ① 的 `buttonsState()` 补丁自动生效;
+> 只有用 `pollButtons()` + `justPressed()` / `justReleased()` 做边缘检测的游戏才需要换 ③。
+
 **设计取舍(为什么这样安全)**:`Serial.write()` 在 USB 缓冲满时会忙等阻塞,
 RemoteArduboy 发送前检查 `availableForWrite()`,不够一块就丢本帧——主机慢或
 拔线只会丢帧,**游戏永不卡死**。主机没开串口时 `sendFrame()` 直接返回,零开销。
+
+## 移植现有游戏源码
+
+把任意 Arduboy2 游戏接上 RemoteArduboy,只在 `.ino` 主文件动 4 处调用(外加 1 行
+`#include`)。仓库里已有一个完整实例:[firmware/games/Arduboy3D/](firmware/games/Arduboy3D/)
+——经典游戏 **Catacombs of the Damned**(源码 [jhhoward/Arduboy3D](https://github.com/jhhoward/Arduboy3D),MIT 许可)。
+
+**先判断游戏怎么读按键,决定要不要改按键那行:**
+
+| 游戏读按键方式 | 按键代码改动 |
+|---|---|
+| 只用 `pressed()` / `anyPressed()`(直接读引脚) | **不用改** —— 远端按键经 `buttonsState()` 补丁自动生效 |
+| 用 `pollButtons()` + `justPressed()` / `justReleased()`(边缘检测) | `arduboy.pollButtons()` → `RemoteArduboy::pollButtons(arduboy)` |
+
+**通用步骤(以 Catacombs 为例):**
+
+1. 游戏 `.ino` 顶部加 `#include <RemoteArduboy.h>`
+2. `setup()` 里 `arduboy.boot()` / `arduboy.begin()` 之后加 `RemoteArduboy::begin();`
+3. `loop()` 最前加 `RemoteArduboy::update();`
+4. 若游戏用 `pollButtons()`,替换为 `RemoteArduboy::pollButtons(arduboy)`;只用 `pressed()` 的跳过
+5. `arduboy.display(...)` 之后加 `RemoteArduboy::sendFrame();`
+
+Catacombs 是"只用 `pressed()`"的情况,所以实际只动了 4 处:include、begin、update、
+sendFrame,按键逻辑原样未改,网页按键即可直接操作游戏。
+
+**移植时的三个坑:**
+
+- **依赖库**:游戏用到的其他库要一并装好。Catacombs 依赖 **ArduboyTones**(Arduino IDE「管理库」搜 `ArduboyTones` 安装),否则编译报错。
+- **flash / RAM 余量**:3D 类游戏很吃内存。RemoteArduboy 的 CRC 用 16 字节半字节查表(放 PROGMEM),零 RAM 占用;Catacombs 集成后总占用约 28608 / 28672 字节,**余量仅 64 字节**。若你的游戏更大,优先优化游戏自身资源,别动 RemoteArduboy。
+- **帧率对齐**:游戏 `setFrameRate()` 与串流上限 30fps 一致时一帧对一帧最稳(Catacombs 的 `TARGET_FRAMERATE` 正好是 30)。
 
 ## 通信协议
 
 双向,`0xAA` 同步 + 类型 + 负载 + CRC-8(poly 0x31,MSB-first)。定义与固件
 逐字节一致:网页端 [src/protocol.js](src/protocol.js),固件端
-`RemoteArduboy.cpp`。按键位:`bit0=上 bit1=右 bit2=左 bit3=下 bit4=A bit5=B`。
+`RemoteArduboy.cpp`。按键位直接用 Arduboy2 自带的位值(`UP=0x80 RIGHT=0x40
+LEFT=0x20 DOWN=0x10 A=0x08 B=0x04`)。
 
 **设备 → 主机**(~30fps 流)
 
 | 包 | 说明 |
 |---|---|
-| `AA 01 <seq> <idx> <count> <64B> <crc>` | 屏幕帧块:1024B 帧 = 16 块 × 64B(一块 = 一个 USB 包) |
+| `AA 01 <seq> <idx> <count> <64B> <crc>` | 屏幕帧块:1024B 帧 = 16 块 × 64B(正好一个 USB 包,SOF 1ms 自动 flush) |
 | `AA 02 <buttons> <crc>` | 按键状态,每帧附带一次 |
 | `AA 20 <ver> <chunks> <chunkSize> <maxRate> <crc>` | 设备信息应答(回应 `AA 12`) |
 
@@ -149,6 +191,7 @@ src/
 firmware/
   libraries/RemoteArduboy/       Arduino 库(屏幕串流 + 按键注入)
   remote_demo/remote_demo.ino    演示 sketch:弹跳方块 + 按键指示
+  games/Arduboy3D/               移植实例:Catacombs of the Damned(已接 RemoteArduboy)
 tools/
   convert_model.md               STEP→GLB 转换步骤
   calibrate.html                 3D 标定工具(独立页面)
@@ -163,13 +206,14 @@ usbser.sys 自动绑定)。若显示"未知设备",是自制板 USB 描述符不
 需修固件描述符或安装 Arduino IDE 附带的驱动。
 
 **已连接但屏幕没画面?**
-确认:烧的是 `remote_demo`(或已按上面接好游戏的 3 行)、Arduboy2 补丁已打、
+确认:烧的是 `remote_demo`(或已按上面接好游戏的 4 处调用)、Arduboy2 补丁已打、
 `sendFrame()` 在 `arduboy.display()` **之后**调用。可以先用「模拟模式」
 排除网页端问题。
 
 **远端按键不生效?**
-检查补丁是否打对(`#define ARDUBOY2_BUTTON_STATE_ACCESSIBLE` 必须在
-Arduboy2.h 里,且游戏用的是 `RemoteArduboy::pollButtons(arduboy)`)。
+检查 `Arduboy2Core.cpp` 的 `buttonsState()` 是否 `return buttons |
+remoteButtonsState;`、`Arduboy2Core.h` 是否声明了 `remoteButtonsState`,
+且游戏用的是 `RemoteArduboy::pollButtons(arduboy)`。
 
 **游戏变卡了?**
 库的发送路径全非阻塞;若卡顿,检查游戏里是否自己用 `Serial.write()`
